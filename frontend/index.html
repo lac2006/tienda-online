@@ -1,0 +1,407 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Tienda online - Frontend</title>
+<style>
+  :root { --azul:#0f4c75; --gris:#f3f5f7; --borde:#d5dbe1; --ok:#1b7f3b; --err:#b3261e; }
+  * { box-sizing: border-box; }
+  body { font-family: system-ui, Arial, sans-serif; margin:0; background:var(--gris); color:#222; }
+  header { background:var(--azul); color:#fff; padding:14px 24px; display:flex; flex-wrap:wrap; gap:12px; align-items:center; justify-content:space-between; }
+  header h1 { margin:0; font-size:1.3rem; }
+  .servidor { display:flex; gap:8px; align-items:center; font-size:.9rem; }
+  .servidor input { width:260px; }
+  nav { display:flex; gap:4px; padding:12px 24px 0; flex-wrap:wrap; }
+  nav button { border:1px solid var(--borde); border-bottom:none; background:#e4e8ec; padding:10px 18px; cursor:pointer; border-radius:8px 8px 0 0; font-size:.95rem; }
+  nav button.activa { background:#fff; font-weight:600; color:var(--azul); }
+  main { background:#fff; margin:0 24px 24px; padding:20px; border:1px solid var(--borde); border-radius:0 8px 8px 8px; }
+  section { display:none; } section.activa { display:block; }
+  h2 { margin-top:0; color:var(--azul); } h3 { color:var(--azul); margin-bottom:6px; }
+  table { border-collapse:collapse; width:100%; margin:10px 0 20px; font-size:.92rem; }
+  th, td { border:1px solid var(--borde); padding:6px 10px; text-align:left; }
+  th { background:var(--gris); }
+  td.num { text-align:right; }
+  form, .fila { display:flex; flex-wrap:wrap; gap:10px; align-items:end; margin-bottom:16px; }
+  label { display:flex; flex-direction:column; font-size:.82rem; gap:3px; }
+  input, select, button { font:inherit; padding:7px 9px; border:1px solid var(--borde); border-radius:6px; }
+  button.primario { background:var(--azul); color:#fff; border-color:var(--azul); cursor:pointer; }
+  button.peligro { background:#fff; color:var(--err); border-color:var(--err); cursor:pointer; padding:3px 8px; }
+  #mensaje { margin:12px 24px 0; padding:10px 14px; border-radius:6px; display:none; font-size:.92rem; }
+  #mensaje.ok { display:block; background:#e5f4ea; color:var(--ok); border:1px solid var(--ok); }
+  #mensaje.error { display:block; background:#fdeceb; color:var(--err); border:1px solid var(--err); }
+  .linea-pedido { display:flex; gap:10px; margin-bottom:8px; align-items:end; }
+  .pedido { border:1px solid var(--borde); border-radius:8px; padding:10px 14px; margin-bottom:12px; }
+  .pequeno { color:#666; font-size:.82rem; }
+  code { background:var(--gris); padding:1px 5px; border-radius:4px; }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>🛒 Tienda online</h1>
+  <!-- La dirección del servidor se puede cambiar aquí para probar en local o contra otro equipo -->
+  <div class="servidor">
+    <label style="flex-direction:row;align-items:center;gap:8px;color:#fff">Servidor API:
+      <input id="baseUrl" type="text" value="http://localhost:8000">
+    </label>
+    <button class="primario" id="btnGuardarUrl" style="border-color:#fff">Aplicar</button>
+  </div>
+</header>
+
+<nav id="tabs">
+  <button data-tab="productos" class="activa">Productos</button>
+  <button data-tab="usuarios">Usuarios</button>
+  <button data-tab="pedidos">Pedidos</button>
+</nav>
+
+<div id="mensaje"></div>
+
+<main>
+  <!-- ============================ PRODUCTOS ============================ -->
+  <section id="productos" class="activa">
+    <h2>Productos</h2>
+    <h3>Nuevo producto</h3>
+    <form id="formProducto">
+      <label>Tipo
+        <select id="pTipo">
+          <option value="generico">Genérico</option>
+          <option value="electronico">Electrónico</option>
+          <option value="ropa">Ropa</option>
+        </select>
+      </label>
+      <label>Nombre <input id="pNombre" required></label>
+      <label>Precio (€) <input id="pPrecio" type="number" step="0.01" min="0.01" required></label>
+      <label>Stock <input id="pStock" type="number" min="0" step="1" required></label>
+      <label class="solo-electronico" style="display:none">Meses garantía <input id="pGarantia" type="number" min="0" step="1"></label>
+      <label class="solo-ropa" style="display:none">Talla <input id="pTalla"></label>
+      <label class="solo-ropa" style="display:none">Color <input id="pColor"></label>
+      <button class="primario" type="submit">Crear producto</button>
+    </form>
+
+    <h3>Listado <button id="btnRecargarProductos">↻ Recargar</button></h3>
+    <table>
+      <thead><tr><th>ID</th><th>Tipo</th><th>Nombre</th><th>Precio</th><th>Stock</th><th>Detalles</th><th></th></tr></thead>
+      <tbody id="tablaProductos"></tbody>
+    </table>
+  </section>
+
+  <!-- ============================ USUARIOS ============================ -->
+  <section id="usuarios">
+    <h2>Usuarios</h2>
+    <h3>Nuevo usuario</h3>
+    <form id="formUsuario">
+      <label>Tipo
+        <select id="uTipo">
+          <option value="cliente">Cliente</option>
+          <option value="administrador">Administrador</option>
+        </select>
+      </label>
+      <label>Nombre <input id="uNombre" required></label>
+      <label>Email <input id="uEmail" type="email" required></label>
+      <label id="labelDireccion">Dirección <input id="uDireccion"></label>
+      <button class="primario" type="submit">Crear usuario</button>
+    </form>
+
+    <h3>Listado <button id="btnRecargarUsuarios">↻ Recargar</button></h3>
+    <table>
+      <thead><tr><th>ID</th><th>Nombre</th><th>Email</th><th>Rol</th></tr></thead>
+      <tbody id="tablaUsuarios"></tbody>
+    </table>
+  </section>
+
+  <!-- ============================ PEDIDOS ============================ -->
+  <section id="pedidos">
+    <h2>Pedidos</h2>
+    <h3>Crear pedido</h3>
+    <div class="fila">
+      <label>Cliente <select id="pedCliente"></select></label>
+    </div>
+    <div id="lineasPedido"></div>
+    <div class="fila">
+      <button id="btnAnadirLinea" type="button">+ Añadir producto</button>
+      <button id="btnCrearPedido" class="primario" type="button">Realizar pedido</button>
+    </div>
+
+    <h3>Pedidos de un usuario</h3>
+    <div class="fila">
+      <label>Usuario <select id="consCliente"></select></label>
+      <button id="btnConsultarPedidos" class="primario" type="button">Consultar pedidos</button>
+    </div>
+    <div id="listaPedidos"></div>
+  </section>
+</main>
+
+<script>
+/* =====================================================================
+   CAPA DE ACCESO A LA API
+   Todas las peticiones HTTP del frontend pasan por la función apiFetch().
+   Usa fetch() para llamar a la API REST de FastAPI, comprueba el código
+   de estado (response.ok) y procesa el JSON de la respuesta.
+   ===================================================================== */
+let BASE_URL = "http://localhost:8000";   // se puede cambiar desde la cabecera
+
+async function apiFetch(ruta, opciones = {}) {
+  let respuesta;
+  try {
+    respuesta = await fetch(BASE_URL + ruta, {
+      headers: { "Content-Type": "application/json" },
+      ...opciones,
+    });
+  } catch (e) {
+    throw new Error("No se pudo conectar con la API en " + BASE_URL);
+  }
+  if (respuesta.status === 204) return null;            // DELETE correcto: sin cuerpo
+  const datos = await respuesta.json().catch(() => null);
+  if (!respuesta.ok) {                                  // códigos 4xx / 5xx
+    let detalle = datos && datos.detail;
+    // Los errores 422 de validación traen una lista de errores
+    if (Array.isArray(detalle)) detalle = detalle.map(d => d.msg).join("; ");
+    throw new Error(`(${respuesta.status}) ${detalle || "Error en la petición"}`);
+  }
+  return datos;                                         // JSON de la respuesta
+}
+
+/* Una función por endpoint: así se ve claramente qué endpoint usa cada operación */
+const api = {
+  listarProductos: ()      => apiFetch("/productos"),                                              // GET    /productos
+  crearProducto:  (datos)  => apiFetch("/productos", { method: "POST", body: JSON.stringify(datos) }), // POST   /productos
+  eliminarProducto: (id)   => apiFetch("/productos/" + id, { method: "DELETE" }),                  // DELETE /productos/{id}
+  listarUsuarios: ()       => apiFetch("/usuarios"),                                               // GET    /usuarios
+  crearUsuario:   (datos)  => apiFetch("/usuarios", { method: "POST", body: JSON.stringify(datos) }),  // POST   /usuarios
+  crearPedido:    (datos)  => apiFetch("/pedidos", { method: "POST", body: JSON.stringify(datos) }),    // POST   /pedidos
+  pedidosDeUsuario: (id)   => apiFetch("/usuarios/" + id + "/pedidos"),                            // GET    /usuarios/{id}/pedidos
+};
+
+/* ============================ Utilidades de interfaz ============================ */
+const $ = id => document.getElementById(id);
+
+function mostrar(texto, tipo = "ok") {
+  const m = $("mensaje");
+  m.textContent = texto;
+  m.className = tipo;
+  clearTimeout(mostrar.t);
+  mostrar.t = setTimeout(() => (m.className = ""), 6000);
+}
+
+// Crea una celda <td> usando textContent (evita inyectar HTML con datos del servidor)
+function celda(texto, clase) {
+  const td = document.createElement("td");
+  td.textContent = texto;
+  if (clase) td.className = clase;
+  return td;
+}
+const euros = n => Number(n).toFixed(2) + " €";
+
+/* Ejecuta una acción y muestra el error de la API si falla */
+async function intentar(accion) {
+  try { await accion(); } catch (e) { mostrar(e.message, "error"); }
+}
+
+/* ============================ Pestañas ============================ */
+$("tabs").addEventListener("click", e => {
+  const tab = e.target.dataset.tab;
+  if (!tab) return;
+  document.querySelectorAll("nav button").forEach(b => b.classList.toggle("activa", b === e.target));
+  document.querySelectorAll("section").forEach(s => s.classList.toggle("activa", s.id === tab));
+  if (tab === "pedidos") intentar(cargarSelectoresPedidos);
+});
+
+$("btnGuardarUrl").addEventListener("click", () => {
+  BASE_URL = $("baseUrl").value.trim().replace(/\/+$/, "");
+  try { localStorage.setItem("baseUrl", BASE_URL); } catch (e) {}
+  mostrar("Servidor API: " + BASE_URL);
+  intentar(cargarTodo);
+});
+
+/* ============================ PRODUCTOS ============================ */
+let productosCache = [];
+
+async function cargarProductos() {
+  productosCache = await api.listarProductos();                 // GET /productos
+  const tbody = $("tablaProductos");
+  tbody.replaceChildren();
+  if (productosCache.length === 0) {
+    const tr = document.createElement("tr");
+    const td = celda("No hay productos todavía.");
+    td.colSpan = 7; tr.appendChild(td); tbody.appendChild(tr);
+  }
+  for (const p of productosCache) {
+    const tr = document.createElement("tr");
+    let detalles = "";
+    if (p.tipo === "electronico") detalles = p.meses_garantia + " meses de garantía";
+    if (p.tipo === "ropa") detalles = "Talla " + p.talla + ", " + p.color;
+    tr.append(celda(p.id.slice(0, 8)), celda(p.tipo), celda(p.nombre),
+              celda(euros(p.precio), "num"), celda(p.stock, "num"), celda(detalles));
+    const tdAccion = document.createElement("td");
+    const btn = document.createElement("button");
+    btn.className = "peligro"; btn.textContent = "Eliminar";
+    btn.addEventListener("click", () => intentar(async () => {
+      if (!confirm("¿Eliminar el producto " + p.nombre + "?")) return;
+      await api.eliminarProducto(p.id);                         // DELETE /productos/{id}
+      mostrar("Producto eliminado");
+      await cargarProductos();
+    }));
+    tdAccion.appendChild(btn); tr.appendChild(tdAccion);
+    tbody.appendChild(tr);
+  }
+}
+
+// Muestra solo los campos extra que corresponden al tipo elegido
+function actualizarCamposProducto() {
+  const tipo = $("pTipo").value;
+  document.querySelectorAll(".solo-electronico").forEach(e => (e.style.display = tipo === "electronico" ? "flex" : "none"));
+  document.querySelectorAll(".solo-ropa").forEach(e => (e.style.display = tipo === "ropa" ? "flex" : "none"));
+}
+$("pTipo").addEventListener("change", actualizarCamposProducto);
+
+$("formProducto").addEventListener("submit", e => {
+  e.preventDefault();
+  intentar(async () => {
+    const tipo = $("pTipo").value;
+    const datos = {                       // cuerpo JSON de POST /productos (esquema ProductoCreate)
+      tipo,
+      nombre: $("pNombre").value,
+      precio: parseFloat($("pPrecio").value),
+      stock: parseInt($("pStock").value, 10),
+    };
+    if (tipo === "electronico") datos.meses_garantia = parseInt($("pGarantia").value, 10);
+    if (tipo === "ropa") { datos.talla = $("pTalla").value; datos.color = $("pColor").value; }
+    const creado = await api.crearProducto(datos);               // POST /productos
+    mostrar("Producto creado: " + creado.nombre);
+    e.target.reset(); actualizarCamposProducto();
+    await cargarProductos();
+  });
+});
+$("btnRecargarProductos").addEventListener("click", () => intentar(cargarProductos));
+
+/* ============================ USUARIOS ============================ */
+let usuariosCache = [];
+
+async function cargarUsuarios() {
+  usuariosCache = await api.listarUsuarios();                   // GET /usuarios
+  const tbody = $("tablaUsuarios");
+  tbody.replaceChildren();
+  if (usuariosCache.length === 0) {
+    const tr = document.createElement("tr");
+    const td = celda("No hay usuarios todavía.");
+    td.colSpan = 4; tr.appendChild(td); tbody.appendChild(tr);
+  }
+  for (const u of usuariosCache) {
+    const tr = document.createElement("tr");
+    tr.append(celda(u.id.slice(0, 8)), celda(u.nombre), celda(u.email),
+              celda(u.es_admin ? "Administrador" : "Cliente"));
+    tbody.appendChild(tr);
+  }
+}
+
+$("uTipo").addEventListener("change", () => {
+  $("labelDireccion").style.display = $("uTipo").value === "cliente" ? "flex" : "none";
+});
+
+$("formUsuario").addEventListener("submit", e => {
+  e.preventDefault();
+  intentar(async () => {
+    const tipo = $("uTipo").value;
+    const datos = { tipo, nombre: $("uNombre").value, email: $("uEmail").value };   // esquema UsuarioCreate
+    if (tipo === "cliente") datos.direccion = $("uDireccion").value;
+    const creado = await api.crearUsuario(datos);                // POST /usuarios
+    mostrar("Usuario creado: " + creado.nombre);
+    e.target.reset(); $("labelDireccion").style.display = "flex";
+    await cargarUsuarios();
+  });
+});
+$("btnRecargarUsuarios").addEventListener("click", () => intentar(cargarUsuarios));
+
+/* ============================ PEDIDOS ============================ */
+function rellenarSelect(select, opciones, textoVacio) {
+  select.replaceChildren();
+  if (opciones.length === 0) {
+    const o = document.createElement("option");
+    o.value = ""; o.textContent = textoVacio; select.appendChild(o);
+    return;
+  }
+  for (const [valor, texto] of opciones) {
+    const o = document.createElement("option");
+    o.value = valor; o.textContent = texto; select.appendChild(o);
+  }
+}
+
+async function cargarSelectoresPedidos() {
+  await Promise.all([cargarUsuarios(), cargarProductos()]);
+  // Solo los clientes pueden hacer pedidos (la API rechaza a los administradores)
+  const clientes = usuariosCache.filter(u => !u.es_admin).map(u => [u.id, u.nombre + " (" + u.email + ")"]);
+  rellenarSelect($("pedCliente"), clientes, "— No hay clientes —");
+  rellenarSelect($("consCliente"), clientes, "— No hay clientes —");
+  if ($("lineasPedido").children.length === 0) anadirLinea();
+  else document.querySelectorAll(".linea-pedido select").forEach(refrescarOpcionesProducto);
+}
+
+function refrescarOpcionesProducto(select) {
+  const actual = select.value;
+  rellenarSelect(select, productosCache.map(p => [p.id, `${p.nombre} - ${euros(p.precio)} (stock ${p.stock})`]), "— No hay productos —");
+  if (actual) select.value = actual;
+}
+
+function anadirLinea() {
+  const div = document.createElement("div");
+  div.className = "linea-pedido";
+  const lp = document.createElement("label"); lp.textContent = "Producto";
+  const sel = document.createElement("select"); lp.appendChild(sel);
+  const lc = document.createElement("label"); lc.textContent = "Cantidad";
+  const cant = document.createElement("input");
+  cant.type = "number"; cant.min = "1"; cant.step = "1"; cant.value = "1"; cant.style.width = "90px";
+  lc.appendChild(cant);
+  const quitar = document.createElement("button");
+  quitar.type = "button"; quitar.textContent = "✕"; quitar.className = "peligro";
+  quitar.addEventListener("click", () => div.remove());
+  div.append(lp, lc, quitar);
+  $("lineasPedido").appendChild(div);
+  refrescarOpcionesProducto(sel);
+}
+$("btnAnadirLinea").addEventListener("click", anadirLinea);
+
+$("btnCrearPedido").addEventListener("click", () => intentar(async () => {
+  const items = [...document.querySelectorAll(".linea-pedido")]
+    .map(l => ({ producto_id: l.querySelector("select").value, cantidad: parseInt(l.querySelector("input").value, 10) }))
+    .filter(i => i.producto_id);
+  const datos = { cliente_id: $("pedCliente").value, items };   // cuerpo JSON de POST /pedidos (esquema PedidoCreate)
+  if (!datos.cliente_id) throw new Error("Selecciona un cliente");
+  const pedido = await api.crearPedido(datos);                  // POST /pedidos
+  mostrar(`Pedido creado para ${pedido.cliente_nombre}. Total: ${euros(pedido.total)}`);
+  await cargarProductos();                                      // el stock ha cambiado
+  document.querySelectorAll(".linea-pedido select").forEach(refrescarOpcionesProducto);
+}));
+
+$("btnConsultarPedidos").addEventListener("click", () => intentar(async () => {
+  const id = $("consCliente").value;
+  if (!id) throw new Error("Selecciona un usuario");
+  const pedidos = await api.pedidosDeUsuario(id);               // GET /usuarios/{id}/pedidos
+  const cont = $("listaPedidos");
+  cont.replaceChildren();
+  if (pedidos.length === 0) { cont.textContent = "Este usuario no tiene pedidos."; return; }
+  for (const p of pedidos) {
+    const caja = document.createElement("div"); caja.className = "pedido";
+    const cab = document.createElement("strong");
+    cab.textContent = `Pedido ${p.id.slice(0, 8)} — ${new Date(p.fecha).toLocaleString()} — Total: ${euros(p.total)}`;
+    const lista = document.createElement("ul");
+    for (const it of p.items) {
+      const li = document.createElement("li");
+      li.textContent = `${it.cantidad} × ${it.nombre} (${euros(it.precio_unitario)}) = ${euros(it.subtotal)}`;
+      lista.appendChild(li);
+    }
+    caja.append(cab, lista); cont.appendChild(caja);
+  }
+}));
+
+/* ============================ Inicio ============================ */
+async function cargarTodo() {
+  await Promise.all([cargarProductos(), cargarUsuarios()]);
+}
+
+try { BASE_URL = localStorage.getItem("baseUrl") || BASE_URL; } catch (e) {}
+$("baseUrl").value = BASE_URL;
+intentar(cargarTodo);
+</script>
+</body>
+</html>
