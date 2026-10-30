@@ -1,0 +1,15 @@
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+*.egg-info/
+
+# Secretos y configuración local (nunca subir claves)
+.env
+
+# Sistema y editores
+.DS_Store
+__MACOSX/
+.idea/
+.vscode/
